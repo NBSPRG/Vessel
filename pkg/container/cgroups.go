@@ -1,17 +1,34 @@
 package container
 
 import (
+	"fmt"
 	"github.com/0xc0d/vessel/pkg/cgroups"
 	"path/filepath"
 )
 
 // LoadCGroups loads CGroups for container.
+// If a resource tier is set it is applied first; any explicit per-field
+// limits (memory, swap, cpu, pids) are then applied on top, overriding
+// the tier defaults — mirroring Kubernetes LimitRange override semantics.
 func (c *Container) LoadCGroups() error {
 	cg := cgroups.NewCGroup()
-	cg.SetPath(filepath.Join("vessel", c.Digest)).
-		SetMemorySwapLimit(c.mem, c.swap).
-		SetCPULimit(c.cpus).
-		SetProcessLimit(c.pids)
+	cg.SetPath(filepath.Join("vessel", c.Digest))
+
+	// Apply tier baseline first (no-op when tier == -1)
+	if c.tier >= 0 {
+		cg.ApplyTier(cgroups.Tier(c.tier))
+	}
+
+	// Explicit limits override tier defaults (zero means "use tier value")
+	if c.mem > 0 || c.swap > 0 {
+		cg.SetMemorySwapLimit(c.mem, c.swap)
+	}
+	if c.cpus > 0 {
+		cg.SetCPULimit(c.cpus)
+	}
+	if c.pids > 0 {
+		cg.SetProcessLimit(c.pids)
+	}
 
 	err := cg.Load()
 	if err != nil {
@@ -69,4 +86,17 @@ func getPidsByDigest(digest string) ([]int, error) {
 	}
 	pids, err := cg.GetPids()
 	return pids, err
+}
+
+// SetResourceTier configures a named resource tier (micro/small/medium/large/xlarge).
+// The tier sets baseline CPU, memory, and PID limits; any explicit
+// SetMemorySwapLimit / SetCPULimit / SetProcessLimit calls made afterward
+// will override the tier values for that specific field.
+func (c *Container) SetResourceTier(name string) error {
+	tier, err := cgroups.ParseTier(name)
+	if err != nil {
+		return fmt.Errorf("invalid resource tier: %w", err)
+	}
+	c.tier = int(tier)
+	return nil
 }

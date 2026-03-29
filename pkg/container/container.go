@@ -28,13 +28,17 @@ type Container struct {
 	swap   int
 	pids   int
 	cpus   float64
+	tier   int // -1 means no tier; maps to cgroups.Tier when >= 0
 }
 
-/// NewContainer returns a new Container with a random digest.
+// NewContainer returns a new Container with a random digest.
+// tier is initialised to -1 (no tier) so that zero-value detection works
+// correctly — a tier of 0 is valid (TierMicro).
 func NewContainer() *Container {
 	ctr := &Container{
 		Config: new(v1.Config),
 		Digest: randomHash(),
+		tier:   -1,
 	}
 	return ctr
 }

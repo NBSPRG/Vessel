@@ -26,18 +26,45 @@ func NewForkCommand() *cobra.Command {
 		},
 	}
 
+	var (
+		mem  int
+		swap int
+		cpu  float64
+		pids int
+		tier string
+	)
+
 	flags := cmd.Flags()
 	flags.StringVar(&ctr.Digest, "container", "", "")
 	flags.StringVar(&ctr.RootFS, "root", "", "")
 	flags.StringVar(&ctr.Config.Hostname, "host", "", "")
 	flags.BoolVar(&detach, "detach", false, "")
-	mem := flags.Int("memory", 100, "")
-	swap := flags.Int("swap", 20, "")
-	cpu := flags.Float64("cpus", 1, "")
-	pids := flags.Int("pids", 128, "")
-	ctr.SetMemorySwapLimit(*mem, *swap)
-	ctr.SetCPULimit(*cpu)
-	ctr.SetProcessLimit(*pids)
+	flags.IntVar(&mem, "memory", 0, "")
+	flags.IntVar(&swap, "swap", 0, "")
+	flags.Float64Var(&cpu, "cpus", 0, "")
+	flags.IntVar(&pids, "pids", 0, "")
+	flags.StringVar(&tier, "tier", "", "")
+
+	// Wrap RunE to apply resource settings after cobra has parsed the flags.
+	baseRunE := cmd.RunE
+	cmd.RunE = func(c *cobra.Command, args []string) error {
+		if tier != "" {
+			if err := ctr.SetResourceTier(tier); err != nil {
+				return err
+			}
+		}
+		// Explicit limits override tier (zero = defer to tier)
+		if mem > 0 || swap > 0 {
+			ctr.SetMemorySwapLimit(mem, swap)
+		}
+		if cpu > 0 {
+			ctr.SetCPULimit(cpu)
+		}
+		if pids > 0 {
+			ctr.SetProcessLimit(pids)
+		}
+		return baseRunE(c, args)
+	}
 
 	cmd.MarkFlagRequired("root")
 	cmd.MarkFlagRequired("container")

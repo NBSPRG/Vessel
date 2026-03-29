@@ -1,0 +1,143 @@
+# docker-compose.test.yml
+#
+# Multi-distro test matrix for Vessel container runtime.
+# Validates that the Go build and unit-test suite pass across the four most
+# common Linux distributions used in enterprise + cloud environments.
+#
+# Usage:
+#   make test-distro
+#   docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
+#
+# Each service:
+#   1. Installs Go 1.21 via the official tarball (ensures identical toolchain)
+#   2. Downloads dependencies (go mod download)
+#   3. Runs go vet ./... (static analysis)
+#   4. Runs go test ./... -v (unit tests)
+#
+# Note: Integration tests that need real Linux kernel namespaces/cgroups
+# must be run natively on a Linux host (see scripts/test-integration.sh).
+
+x-common-test: &common-test
+  volumes:
+    - .:/workspace:ro          # mount source read-only for safety
+  working_dir: /workspace
+  environment:
+    - CGO_ENABLED=0
+    - GOPATH=/go
+    - GOFLAGS=-mod=mod
+  # Exit code propagates: non-zero means test failure
+  command: >
+    sh -c "
+      set -e &&
+      echo '=== Installing Go 1.21 ===' &&
+      wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+      tar -C /usr/local -xzf /tmp/go.tar.gz &&
+      export PATH=\$PATH:/usr/local/go/bin &&
+      go version &&
+      echo '=== Downloading dependencies ===' &&
+      go mod download &&
+      echo '=== Running go vet ===' &&
+      go vet ./... &&
+      echo '=== Running unit tests ===' &&
+      go test ./... -v -count=1 &&
+      echo '=== PASS on '\"$DISTRO_NAME\"' ==='
+    "
+
+services:
+  test-ubuntu2004:
+    <<: *common-test
+    image: ubuntu:20.04
+    environment:
+      - CGO_ENABLED=0
+      - GOPATH=/go
+      - GOFLAGS=-mod=mod
+      - DISTRO_NAME=Ubuntu-20.04
+      - DEBIAN_FRONTEND=noninteractive
+    command: >
+      bash -c "
+        set -e &&
+        apt-get update -qq &&
+        apt-get install -y -qq wget ca-certificates &&
+        wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+        tar -C /usr/local -xzf /tmp/go.tar.gz &&
+        export PATH=\$PATH:/usr/local/go/bin &&
+        go version &&
+        cd /workspace &&
+        go mod download &&
+        go vet ./... &&
+        go test ./... -v -count=1 &&
+        echo '=== PASS: Ubuntu 20.04 ==='
+      "
+
+  test-ubuntu2204:
+    <<: *common-test
+    image: ubuntu:22.04
+    environment:
+      - CGO_ENABLED=0
+      - GOPATH=/go
+      - GOFLAGS=-mod=mod
+      - DISTRO_NAME=Ubuntu-22.04
+      - DEBIAN_FRONTEND=noninteractive
+    command: >
+      bash -c "
+        set -e &&
+        apt-get update -qq &&
+        apt-get install -y -qq wget ca-certificates &&
+        wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+        tar -C /usr/local -xzf /tmp/go.tar.gz &&
+        export PATH=\$PATH:/usr/local/go/bin &&
+        go version &&
+        cd /workspace &&
+        go mod download &&
+        go vet ./... &&
+        go test ./... -v -count=1 &&
+        echo '=== PASS: Ubuntu 22.04 ==='
+      "
+
+  test-debian:
+    <<: *common-test
+    image: debian:bookworm-slim
+    environment:
+      - CGO_ENABLED=0
+      - GOPATH=/go
+      - GOFLAGS=-mod=mod
+      - DISTRO_NAME=Debian-Bookworm
+      - DEBIAN_FRONTEND=noninteractive
+    command: >
+      bash -c "
+        set -e &&
+        apt-get update -qq &&
+        apt-get install -y -qq wget ca-certificates &&
+        wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+        tar -C /usr/local -xzf /tmp/go.tar.gz &&
+        export PATH=\$PATH:/usr/local/go/bin &&
+        go version &&
+        cd /workspace &&
+        go mod download &&
+        go vet ./... &&
+        go test ./... -v -count=1 &&
+        echo '=== PASS: Debian Bookworm ==='
+      "
+
+  test-alpine:
+    <<: *common-test
+    image: alpine:3.18
+    environment:
+      - CGO_ENABLED=0
+      - GOPATH=/go
+      - GOFLAGS=-mod=mod
+      - DISTRO_NAME=Alpine-3.18
+    command: >
+      sh -c "
+        set -e &&
+        apk add --no-cache wget ca-certificates &&
+        wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+        tar -C /usr/local -xzf /tmp/go.tar.gz &&
+        export PATH=\$PATH:/usr/local/go/bin &&
+        go version &&
+        cd /workspace &&
+        go mod download &&
+        go vet ./... &&
+        go test ./... -v -count=1 &&
+        echo '=== PASS: Alpine 3.18 ==='
+      "

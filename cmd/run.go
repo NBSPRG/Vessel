@@ -18,11 +18,12 @@ func NewRunCommand() *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.StringP("host", "", "", "Container Hostname")
-	flags.IntP("memory", "m", 100, "Limit memory access in MB")
-	flags.IntP("swap", "s", 20, "Limit swap access in MB")
-	flags.Float64P("cpus", "c", 2, "Limit CPUs")
-	flags.IntP("pids", "p", 128, "Limit number of processes")
+	flags.IntP("memory", "m", 0, "Limit memory access in MB (overrides --tier)")
+	flags.IntP("swap", "s", 0, "Limit swap access in MB (overrides --tier)")
+	flags.Float64P("cpus", "c", 0, "Limit CPUs (overrides --tier)")
+	flags.IntP("pids", "p", 0, "Limit number of processes (overrides --tier)")
 	flags.BoolP("detach", "d", false, "run command in the background")
+	flags.StringP("tier", "t", "", "Resource tier: micro|small|medium|large|xlarge")
 
 	return cmd
 }
