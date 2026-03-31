@@ -53,7 +53,7 @@ jobs:
               echo "enabled=false"
               echo "reason=pull_request"
             } >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.ref }}" != refs/tags/v* ]]; then
+          elif [[ ! "${{ github.ref }}" =~ ^refs/tags/v.+$ ]]; then
             {
               echo "enabled=false"
               echo "reason=not_a_release_tag"
