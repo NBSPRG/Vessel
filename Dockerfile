@@ -3,7 +3,7 @@
 # Compiles a fully static, stripped binary inside an Alpine-based Go toolchain.
 # CGO_ENABLED=0 + -trimpath + -ldflags="-s -w" minimises binary size.
 # =============================================================================
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Install git for VCS-stamped builds (go build reads git metadata)
 RUN apk add --no-cache git

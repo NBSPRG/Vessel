@@ -9,7 +9,7 @@
 #   docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
 #
 # Each service:
-#   1. Installs Go 1.21 via the official tarball (ensures identical toolchain)
+#   1. Installs Go 1.25.8 via the official tarball (ensures identical toolchain)
 #   2. Downloads dependencies (go mod download)
 #   3. Runs go vet ./... (static analysis)
 #   4. Runs go test ./... -v (unit tests)
@@ -29,8 +29,8 @@ x-common-test: &common-test
   command: >
     sh -c "
       set -e &&
-      echo '=== Installing Go 1.21 ===' &&
-      wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+      echo '=== Installing Go 1.25.8 ===' &&
+      wget -q https://go.dev/dl/go1.25.8.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
       tar -C /usr/local -xzf /tmp/go.tar.gz &&
       export PATH=\$PATH:/usr/local/go/bin &&
       go version &&
@@ -58,7 +58,7 @@ services:
         set -e &&
         apt-get update -qq &&
         apt-get install -y -qq wget ca-certificates &&
-        wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+        wget -q https://go.dev/dl/go1.25.8.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
         tar -C /usr/local -xzf /tmp/go.tar.gz &&
         export PATH=\$PATH:/usr/local/go/bin &&
         go version &&
@@ -83,7 +83,7 @@ services:
         set -e &&
         apt-get update -qq &&
         apt-get install -y -qq wget ca-certificates &&
-        wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+        wget -q https://go.dev/dl/go1.25.8.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
         tar -C /usr/local -xzf /tmp/go.tar.gz &&
         export PATH=\$PATH:/usr/local/go/bin &&
         go version &&
@@ -108,7 +108,7 @@ services:
         set -e &&
         apt-get update -qq &&
         apt-get install -y -qq wget ca-certificates &&
-        wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+        wget -q https://go.dev/dl/go1.25.8.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
         tar -C /usr/local -xzf /tmp/go.tar.gz &&
         export PATH=\$PATH:/usr/local/go/bin &&
         go version &&
@@ -131,7 +131,7 @@ services:
       sh -c "
         set -e &&
         apk add --no-cache wget ca-certificates &&
-        wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
+        wget -q https://go.dev/dl/go1.25.8.linux-amd64.tar.gz -O /tmp/go.tar.gz &&
         tar -C /usr/local -xzf /tmp/go.tar.gz &&
         export PATH=\$PATH:/usr/local/go/bin &&
         go version &&
