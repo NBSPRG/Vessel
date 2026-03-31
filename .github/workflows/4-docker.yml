@@ -36,9 +36,11 @@ jobs:
           VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
           COMMIT=$(git rev-parse --short HEAD)
           BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
-          echo "build_time=$BUILD_TIME" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$VERSION"
+            echo "commit=$COMMIT"
+            echo "build_time=$BUILD_TIME"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,11 +49,17 @@ jobs:
         id: push_policy
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "enabled=false"
+            } >> "$GITHUB_OUTPUT"
           elif [ -z "${{ secrets.DOCKER_USERNAME }}" ] || [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "enabled=false"
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "enabled=true"
+            } >> "$GITHUB_OUTPUT"
           fi
 
       - name: Login to Docker Hub
