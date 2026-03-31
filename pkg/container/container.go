@@ -32,8 +32,6 @@ type Container struct {
 }
 
 // NewContainer returns a new Container with a random digest.
-// tier is initialised to -1 (no tier) so that zero-value detection works
-// correctly — a tier of 0 is valid (TierMicro).
 func NewContainer() *Container {
 	ctr := &Container{
 		Config: new(v1.Config),

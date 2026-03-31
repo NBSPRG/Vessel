@@ -92,17 +92,12 @@ func (cg *CGroups) Load() error {
 	if err := cg.createControllersDir(); err != nil {
 		return err
 	}
-	// enableReleaseAgent is best-effort: WSL2 and some container runtimes
-	// restrict writes to notify_on_release even as root. A failure here does
-	// not affect container isolation — it only suppresses cleanup notifications.
 	_ = cg.enableReleaseAgent()
 
 	if err := cg.addProcess(os.Getpid()); err != nil {
 		return err
 	}
 	if err := cg.loadMemSwLimit(); err != nil {
-		// EPERM / EACCES on WSL2 means the kernel restricts this cgroup file.
-		// Skip non-fatal limit writes so the container can still start.
 		if !isPermError(err) {
 			return err
 		}
@@ -121,8 +116,6 @@ func (cg *CGroups) Load() error {
 	return nil
 }
 
-// isPermError returns true for permission-denied / operation-not-permitted
-// errors that occur on restricted cgroup files in WSL2 / nested containers.
 func isPermError(err error) bool {
 	return errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES) || os.IsPermission(err)
 }
