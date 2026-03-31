@@ -51,16 +51,34 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             {
               echo "enabled=false"
+              echo "reason=pull_request"
+            } >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref }}" != refs/tags/v* ]]; then
+            {
+              echo "enabled=false"
+              echo "reason=not_a_release_tag"
+            } >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.run_attempt }}" != "1" ]; then
+            {
+              echo "enabled=false"
+              echo "reason=rerun_attempt"
             } >> "$GITHUB_OUTPUT"
           elif [ -z "${{ secrets.DOCKER_USERNAME }}" ] || [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
             {
               echo "enabled=false"
+              echo "reason=missing_dockerhub_secrets"
             } >> "$GITHUB_OUTPUT"
           else
             {
               echo "enabled=true"
+              echo "reason=release_tag_first_attempt"
             } >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Show Docker publish policy
+        run: |
+          echo "push_enabled=${{ steps.push_policy.outputs.enabled }}"
+          echo "reason=${{ steps.push_policy.outputs.reason }}"
 
       - name: Login to Docker Hub
         if: steps.push_policy.outputs.enabled == 'true'
