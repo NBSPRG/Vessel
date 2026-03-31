@@ -79,7 +79,7 @@ func setNamespace(pid int, flag int) error {
 		}
 		nsFile, err := os.Open(filepath.Join(nsBase, v))
 		if err != nil {
-			return errors.Wrapf(err, "can't open %s", nsFile)
+			return errors.Wrapf(err, "can't open %s", v)
 		}
 
 		if err := unix.Setns(int(nsFile.Fd()), k); err != nil {
