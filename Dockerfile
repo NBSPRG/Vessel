@@ -32,7 +32,28 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
         -X github.com/0xc0d/vessel/cmd.BuildTime=${BUILD_TIME}" \
       -o /out/vessel .
 
-FROM scratch
+FROM alpine:3.20 AS debug
+
+ARG VERSION=dev
+ARG COMMIT=none
+ARG BUILD_TIME=unknown
+
+LABEL org.opencontainers.image.title="vessel" \
+      org.opencontainers.image.description="Lightweight container runtime built in Go (debug)" \
+      org.opencontainers.image.version=$VERSION \
+      org.opencontainers.image.revision=$COMMIT \
+      org.opencontainers.image.created=$BUILD_TIME
+
+RUN apk add --no-cache ca-certificates iproute2 iptables
+
+COPY --from=builder /out/vessel /usr/local/bin/vessel
+
+USER root
+
+ENTRYPOINT ["/usr/local/bin/vessel"]
+CMD ["--help"]
+
+FROM scratch AS minimal
 
 ARG VERSION=dev
 ARG COMMIT=none

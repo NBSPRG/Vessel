@@ -143,3 +143,19 @@ jobs:
             BUILD_TIME=${{ steps.meta.outputs.build_time }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Push debug Docker image
+        if: steps.push_policy.outputs.enabled == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: debug
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}-debug
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            COMMIT=${{ steps.meta.outputs.commit }}
+            BUILD_TIME=${{ steps.meta.outputs.build_time }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
