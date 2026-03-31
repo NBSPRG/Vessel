@@ -94,4 +94,3 @@ func getImage(src string) (*image.Image, error) {
 
 	return img, err
 }
-

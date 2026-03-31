@@ -33,7 +33,7 @@ func TestParseIP(t *testing.T) {
 // TestBridgeName ensures bridge naming conventions work
 func TestBridgeName(t *testing.T) {
 	tests := []struct {
-		name      string
+		name       string
 		bridgeName string
 	}{
 		{"Standard bridge", "br0"},

@@ -1,3 +1,4 @@
+//go:build freebsd || solaris || darwin
 // +build freebsd solaris darwin
 
 package reexec

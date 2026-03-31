@@ -73,7 +73,7 @@ func runCommand(cmd *exec.Cmd, detach bool) error {
 	if detach {
 		return cmd.Process.Release()
 	}
-	
+
 	return cmd.Wait()
 }
 

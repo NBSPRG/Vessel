@@ -7,9 +7,9 @@ import (
 // TestImageConstants ensures constants are defined correctly
 func TestImageConstants(t *testing.T) {
 	tests := []struct {
-		name     string
-		value    string
-		isEmpty  bool
+		name    string
+		value   string
+		isEmpty bool
 	}{
 		{"RepoFile", RepoFile, RepoFile == ""},
 		{"LyrDir", LyrDir, LyrDir == ""},

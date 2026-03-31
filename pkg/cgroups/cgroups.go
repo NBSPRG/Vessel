@@ -83,7 +83,6 @@ func (cg *CGroups) SetProcessLimit(number int) *CGroups {
 	return cg
 }
 
-
 // Load affects CGroups.
 func (cg *CGroups) Load() error {
 	if err := cg.createControllersDir(); err != nil {

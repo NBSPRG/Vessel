@@ -61,5 +61,5 @@ func (i *Image) addToRepositories() error {
 	}
 	repos[i.Repository] = Repository{i.Name: digest.String()}
 	encoder := json.NewEncoder(file)
-	return  encoder.Encode(repos)
+	return encoder.Encode(repos)
 }
