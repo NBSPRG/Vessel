@@ -12,13 +12,12 @@ import (
 type Unsetter func() error
 
 func MountNewNetworkNamespace(nsTarget string) (filesystem.Unmounter, error) {
-	// #nosec G304 -- nsTarget is controlled by vessel and points to its netns state directory.
+	// #nosec G304
 	_, err := os.OpenFile(nsTarget, syscall.O_RDONLY|syscall.O_CREAT|syscall.O_EXCL, 0600)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create target file")
 	}
 
-	// store current network namespace
 	file, err := os.OpenFile("/proc/self/ns/net", os.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
@@ -39,7 +38,6 @@ func MountNewNetworkNamespace(nsTarget string) (filesystem.Unmounter, error) {
 		return unmount, err
 	}
 
-	// reset previous network namespace
 	if err := unix.Setns(int(file.Fd()), syscall.CLONE_NEWNET); err != nil {
 		return unmount, errors.Wrap(err, "setns syscall failed: ")
 	}
@@ -57,7 +55,7 @@ func SetNetNSByFile(filename string) (Unsetter, error) {
 		return unix.Setns(int(currentNS.Fd()), syscall.CLONE_NEWNET)
 	}
 
-	// #nosec G304 -- filename is expected to be a namespace file managed by vessel.
+	// #nosec G304
 	netnsFile, err := os.OpenFile(filename, syscall.O_RDONLY, 0)
 	if err != nil {
 		return unsetFunc, errors.Wrap(err, "unable to open network namespace file")
@@ -70,7 +68,7 @@ func SetNetNSByFile(filename string) (Unsetter, error) {
 }
 
 func LinkSetNsByFile(filename, linkName string) error {
-	// #nosec G304 -- filename is expected to be a namespace file managed by vessel.
+	// #nosec G304
 	netnsFile, err := os.OpenFile(filename, syscall.O_RDONLY, 0)
 	if err != nil {
 		return errors.Wrap(err, "unable to open netns file")

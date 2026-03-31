@@ -28,7 +28,7 @@ type Container struct {
 	swap   int
 	pids   int
 	cpus   float64
-	tier   int // -1 means no tier; maps to cgroups.Tier when >= 0
+	tier   int
 }
 
 // NewContainer returns a new Container with a random digest.
@@ -116,7 +116,7 @@ func (c *Container) LoadConfig() error {
 		return errors.Errorf("invalid container digest: %s", c.Digest)
 	}
 	filename := filepath.Join(containerPath, c.Digest, containerConfigFile)
-	// #nosec G304 -- filename is constructed from the fixed vessel container path and validated digest.
+	// #nosec G304
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -181,7 +181,7 @@ func GetContainerByDigest(digest string) (*Container, error) {
 
 func getConfigByDigest(digest string) (*v1.Config, error) {
 	cfgPath := filepath.Join(containerPath, digest, containerConfigFile)
-	// #nosec G304 -- cfgPath is constructed from the fixed vessel container path and validated digest.
+	// #nosec G304
 	cfgFile, err := os.Open(cfgPath)
 	if err != nil {
 		return nil, err

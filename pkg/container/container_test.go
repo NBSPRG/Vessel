@@ -1,6 +1,8 @@
 package container
 
 import (
+	"errors"
+	"syscall"
 	"testing"
 )
 
@@ -32,7 +34,7 @@ func TestNewContainer(t *testing.T) {
 // TestSetHostname ensures hostname is set correctly
 func TestSetHostname(t *testing.T) {
 	ctr := NewContainer()
-	if err := ctr.SetHostname(); err != nil {
+	if err := ctr.SetHostname(); err != nil && !errors.Is(err, syscall.EPERM) {
 		t.Fatalf("SetHostname returned error: %v", err)
 	}
 

@@ -18,7 +18,6 @@ func Fork(ctr *container.Container, args []string, detach bool) error {
 	if err := ctr.SetHostname(); err != nil {
 		return err
 	}
-	// set network
 	unset, err := ctr.SetNetworkNamespace()
 	if err != nil {
 		return errors.Wrap(err, "can't set network namespace")
@@ -32,7 +31,6 @@ func Fork(ctr *container.Container, args []string, detach bool) error {
 		return err
 	}
 
-	// Mount necessaries
 	mountPoints := []filesystem.MountOption{
 		{Source: "proc", Target: "proc", Type: "proc"},
 		{Source: "sysfs", Target: "sys", Type: "sysfs"},
@@ -50,7 +48,7 @@ func Fork(ctr *container.Container, args []string, detach bool) error {
 	if command == "" {
 		return errors.New("empty command")
 	}
-	// #nosec G204 -- vessel intentionally executes the configured container command.
+	// #nosec G204
 	newCmd := exec.Command(command, argv...)
 	newCmd.Stdin = os.Stdin
 	newCmd.Stdout = os.Stdout

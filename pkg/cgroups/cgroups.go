@@ -151,7 +151,7 @@ func (cg *CGroups) GetPids() ([]int, error) {
 	}
 
 	proc := filepath.Join(cgroupPath, controllers[0], cg.Path, procsFilename)
-	// #nosec G304 -- proc is constrained to the cgroup filesystem with a validated relative path.
+	// #nosec G304
 	procFile, err := os.Open(proc)
 	if err != nil {
 		return pids, err

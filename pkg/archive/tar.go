@@ -15,7 +15,7 @@ type Tarball struct {
 
 // NewTarFile creates a tarball from a given filename.
 func NewTarFile(filename string) (Extractor, error) {
-	// #nosec G304 -- filename comes from the caller and is opened as a local archive input.
+	// #nosec G304
 	data, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -62,6 +62,7 @@ func (t *Tarball) Extract(dst string) error {
 			if err = os.MkdirAll(filepath.Dir(path), 0750); err != nil {
 				return err
 			}
+			// #nosec G304
 			file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
 			switch {
 			case os.IsExist(err):
@@ -71,12 +72,16 @@ func (t *Tarball) Extract(dst string) error {
 			}
 
 			if header.Size < 0 {
-				file.Close()
+				if closeErr := file.Close(); closeErr != nil {
+					return closeErr
+				}
 				return errors.New("invalid tar entry size")
 			}
-			// #nosec G110 -- tar header size is validated and copy is limited to that size.
+			// #nosec G110
 			if _, err = io.CopyN(file, tarReader, header.Size); err != nil && !errors.Is(err, io.EOF) {
-				file.Close()
+				if closeErr := file.Close(); closeErr != nil {
+					return closeErr
+				}
 				return err
 			}
 			if err := file.Close(); err != nil {

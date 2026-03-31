@@ -12,7 +12,7 @@ type TarGz struct {
 
 // NewTarGzFile creates a Gziped tarball for the given filename.
 func NewTarGzFile(filename string) (Extractor, error) {
-	// #nosec G304 -- filename comes from the caller and is opened as a local archive input.
+	// #nosec G304
 	data, err := os.Open(filename)
 	if err != nil {
 		return nil, err
