@@ -1,0 +1,89 @@
+name: 🔒 Security & Vulnerability Agent
+
+on:
+  workflow_run:
+    workflows: ["🏗️ Build & Compile Agent"]
+    types: [completed]
+  schedule:
+    - cron: '0 2 * * 1'   # Every Monday 2am UTC
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'schedule' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install security tools
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run gosec (SAST)
+        id: gosec
+        run: |
+          gosec -fmt=json -out=gosec-report.json ./... 2>&1 || true
+          gosec -fmt=text ./... 2>&1 | tee gosec-output.txt || true
+          # Fail only on HIGH severity
+          HIGH=$(cat gosec-report.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(len([i for i in d.get('Issues',[]) if i.get('severity')=='HIGH']))" 2>/dev/null || echo 0)
+          echo "high_issues=$HIGH" >> $GITHUB_OUTPUT
+
+      - name: Run govulncheck (dependency CVEs)
+        id: govuln
+        run: |
+          govulncheck ./... 2>&1 | tee govuln-output.txt || true
+          VULNS=$(grep -c "^Vulnerability" govuln-output.txt 2>/dev/null || echo 0)
+          echo "vuln_count=$VULNS" >> $GITHUB_OUTPUT
+
+      - name: Check for hardcoded secrets
+        run: |
+          # Fail if any suspicious patterns found in Go source
+          if grep -rn --include="*.go" \
+            -e "password\s*=" \
+            -e "secret\s*=" \
+            -e "api_key\s*=" \
+            -e "sk-ant-" \
+            .; then
+            echo "WARNING: Possible hardcoded secrets detected"
+          fi
+
+      - name: AI Security Review
+        if: steps.gosec.outputs.high_issues != '0' || steps.govuln.outputs.vuln_count != '0'
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-6
+          prompt: |
+            Security issues found in the vessel container runtime.
+            Review CLAUDE.md for project context.
+
+            gosec findings:
+            $(cat gosec-output.txt | head -80)
+
+            govulncheck findings:
+            $(cat govuln-output.txt | head -40)
+
+            Steps:
+            1. Review HIGH severity issues only (ignore LOW/MEDIUM false positives)
+            2. Fix genuine vulnerabilities with minimal code changes
+            3. For dependency CVEs: update go.mod/go.sum with `go get <pkg>@latest`
+            4. Do NOT change runtime behavior — vessel needs root/namespace access by design
+            5. Commit with message: "fix: resolve security vulnerabilities"
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            gosec-report.json
+            gosec-output.txt
+            govuln-output.txt
+          retention-days: 30

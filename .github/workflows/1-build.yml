@@ -1,0 +1,59 @@
+name: 🏗️ Build & Compile Agent
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run go vet
+        run: go vet ./...
+        continue-on-error: true
+
+      - name: Build binary
+        id: build
+        run: make build
+        continue-on-error: true
+
+      - name: AI-Assisted Fix (Claude Code)
+        if: steps.build.outcome == 'failure'
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-6
+          prompt: |
+            The Go build failed for the vessel container runtime project.
+            Review CLAUDE.md for project context first.
+            Steps:
+            1. Run `go build ./...` and read the error output
+            2. Fix the compilation error with minimal changes
+            3. Ensure CGO_ENABLED=0 is preserved (static binary requirement)
+            4. Run `go vet ./...` to confirm no new issues
+            5. Commit with message: "fix: resolve build error"
+
+      - name: Run unit tests (no root needed)
+        run: make test-unit
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: vessel-binary
+          path: vessel
+          retention-days: 7
