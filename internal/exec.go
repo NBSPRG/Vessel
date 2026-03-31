@@ -23,6 +23,9 @@ func Exec(ctrDigest string, args []string, detach bool) error {
 	if err != nil {
 		return err
 	}
+	if len(args) == 0 {
+		return errors.New("empty command")
+	}
 	if len(ctr.Pids) == 0 || ctr.Pids[0] == 0 {
 		return errors.Errorf("container %s is not running", ctr.Digest)
 	}
@@ -46,6 +49,7 @@ func Exec(ctrDigest string, args []string, detach bool) error {
 	}
 	defer unmounter()
 
+	// #nosec G204 -- exec intentionally runs a user-requested command inside the target container.
 	newCmd := exec.Command(args[0], args[1:]...)
 	newCmd.Stdin, newCmd.Stdout, newCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	newCmd.Env = ctr.Config.Env
@@ -77,10 +81,12 @@ func setNamespace(pid int, flag int) error {
 		if flag&k == 0 {
 			continue
 		}
+		// #nosec G304 -- namespace file path is constructed from a kernel pid namespace path.
 		nsFile, err := os.Open(filepath.Join(nsBase, v))
 		if err != nil {
 			return errors.Wrapf(err, "can't open %s", v)
 		}
+		defer nsFile.Close()
 
 		if err := unix.Setns(int(nsFile.Fd()), k); err != nil {
 			return errors.Wrapf(err, "can't setns to %s", v)

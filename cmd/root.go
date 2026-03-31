@@ -17,9 +17,15 @@ var ErrNotPermitted = errors.New("operation not permitted")
 
 // Make vessel directories first.
 func init() {
-	os.MkdirAll(netnsPath, 0700)
-	os.MkdirAll(layersPath, 0700)
-	os.MkdirAll(containersPath, 0700)
+	if err := os.MkdirAll(netnsPath, 0700); err != nil {
+		panic(err)
+	}
+	if err := os.MkdirAll(layersPath, 0700); err != nil {
+		panic(err)
+	}
+	if err := os.MkdirAll(containersPath, 0700); err != nil {
+		panic(err)
+	}
 }
 
 // NewVesselCommand returns the root cobra.Command for Vessel.

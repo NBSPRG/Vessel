@@ -1,10 +1,9 @@
 package archive
 
 import (
-	"bytes"
 	"compress/gzip"
 	"io"
-	"io/ioutil"
+	"os"
 )
 
 type TarGz struct {
@@ -13,12 +12,12 @@ type TarGz struct {
 
 // NewTarGzFile creates a Gziped tarball for the given filename.
 func NewTarGzFile(filename string) (Extractor, error) {
-	data, err := ioutil.ReadFile(filename)
+	// #nosec G304 -- filename comes from the caller and is opened as a local archive input.
+	data, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
-	reader := bytes.NewReader(data)
-	return &TarGz{reader: reader}, nil
+	return &TarGz{reader: data}, nil
 }
 
 // NewTarGz creates a Gziped tarball for the give Reader.

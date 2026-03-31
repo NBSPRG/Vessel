@@ -46,11 +46,14 @@ func NewContainer() *Container {
 // SetHostname sets Hostname for container.
 //
 // If Hostname was empty it uses the digest[:12]
-func (c *Container) SetHostname() {
+func (c *Container) SetHostname() error {
 	if c.Config.Hostname == "" {
 		c.Config.Hostname = c.Digest[:12]
 	}
-	syscall.Sethostname([]byte(c.Config.Hostname))
+	if err := syscall.Sethostname([]byte(c.Config.Hostname)); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Remove removes Container directory. It only works if all
@@ -104,12 +107,16 @@ func (c *Container) copyImageConfig(img v1.Image) error {
 		return err
 	}
 
-	return ioutil.WriteFile(file, data, 0655)
+	return ioutil.WriteFile(file, data, 0600)
 }
 
 // LoadConfig loads and sets Container Config from its image config file.
 func (c *Container) LoadConfig() error {
+	if len(c.Digest) != DigestStdLen {
+		return errors.Errorf("invalid container digest: %s", c.Digest)
+	}
 	filename := filepath.Join(containerPath, c.Digest, containerConfigFile)
+	// #nosec G304 -- filename is constructed from the fixed vessel container path and validated digest.
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -174,6 +181,7 @@ func GetContainerByDigest(digest string) (*Container, error) {
 
 func getConfigByDigest(digest string) (*v1.Config, error) {
 	cfgPath := filepath.Join(containerPath, digest, containerConfigFile)
+	// #nosec G304 -- cfgPath is constructed from the fixed vessel container path and validated digest.
 	cfgFile, err := os.Open(cfgPath)
 	if err != nil {
 		return nil, err

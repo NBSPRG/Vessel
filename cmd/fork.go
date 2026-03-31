@@ -66,7 +66,11 @@ func NewForkCommand() *cobra.Command {
 		return baseRunE(c, args)
 	}
 
-	cmd.MarkFlagRequired("root")
-	cmd.MarkFlagRequired("container")
+	if err := cmd.MarkFlagRequired("root"); err != nil {
+		panic(err)
+	}
+	if err := cmd.MarkFlagRequired("container"); err != nil {
+		panic(err)
+	}
 	return cmd
 }

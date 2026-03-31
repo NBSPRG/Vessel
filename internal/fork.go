@@ -15,7 +15,9 @@ import (
 // If detach was enable function returns immediately after starting
 // the command and never wait for result
 func Fork(ctr *container.Container, args []string, detach bool) error {
-	ctr.SetHostname()
+	if err := ctr.SetHostname(); err != nil {
+		return err
+	}
 	// set network
 	unset, err := ctr.SetNetworkNamespace()
 	if err != nil {
@@ -45,6 +47,10 @@ func Fork(ctr *container.Container, args []string, detach bool) error {
 	if len(args) > 0 {
 		command, argv = cmdAndArgs(args)
 	}
+	if command == "" {
+		return errors.New("empty command")
+	}
+	// #nosec G204 -- vessel intentionally executes the configured container command.
 	newCmd := exec.Command(command, argv...)
 	newCmd.Stdin = os.Stdin
 	newCmd.Stdout = os.Stdout

@@ -2,7 +2,9 @@ package image
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/0xc0d/vessel/pkg/archive"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -28,7 +30,9 @@ func (i *Image) Download() error {
 
 		tarball := archive.NewTar(rc)
 		err = tarball.Extract(filepath.Join(LyrDir, digest.Hex))
-		rc.Close()
+		if closeErr := rc.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
 		if err != nil {
 			return err
 		}
@@ -48,10 +52,15 @@ func (i *Image) addToRepositories() error {
 	defer file.Close()
 	repos := make(Repositories)
 	decoder := json.NewDecoder(file)
-	decoder.Decode(&repos)
+	if err := decoder.Decode(&repos); err != nil && !errors.Is(err, io.EOF) {
+		return err
+	}
 
 	// truncate file to overwrite
 	if _, err := file.Seek(0, 0); err != nil {
+		return err
+	}
+	if err := file.Truncate(0); err != nil {
 		return err
 	}
 

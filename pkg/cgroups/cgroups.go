@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -85,6 +86,9 @@ func (cg *CGroups) SetProcessLimit(number int) *CGroups {
 
 // Load affects CGroups.
 func (cg *CGroups) Load() error {
+	if err := validateCGPath(cg.Path); err != nil {
+		return err
+	}
 	if err := cg.createControllersDir(); err != nil {
 		return err
 	}
@@ -142,8 +146,12 @@ func (cg *CGroups) Remove() error {
 // GetPids returns slice of pids running on CGroups.
 func (cg *CGroups) GetPids() ([]int, error) {
 	var pids []int
+	if err := validateCGPath(cg.Path); err != nil {
+		return pids, err
+	}
 
 	proc := filepath.Join(cgroupPath, controllers[0], cg.Path, procsFilename)
+	// #nosec G304 -- proc is constrained to the cgroup filesystem with a validated relative path.
 	procFile, err := os.Open(proc)
 	if err != nil {
 		return pids, err
@@ -164,7 +172,7 @@ func (cg *CGroups) GetPids() ([]int, error) {
 func (cg *CGroups) createControllersDir() error {
 	for _, c := range controllers {
 		dir := filepath.Join(cgroupPath, c, cg.Path)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			return err
 		}
 	}
@@ -175,7 +183,7 @@ func (cg *CGroups) createControllersDir() error {
 func (cg *CGroups) enableReleaseAgent() error {
 	for _, c := range controllers {
 		file := filepath.Join(cgroupPath, c, cg.Path, releaseAgentFilename)
-		if err := ioutil.WriteFile(file, []byte{'1'}, 0644); err != nil {
+		if err := ioutil.WriteFile(file, []byte{'1'}, 0600); err != nil {
 			return err
 		}
 	}
@@ -186,7 +194,7 @@ func (cg *CGroups) enableReleaseAgent() error {
 func (cg *CGroups) addProcess(pid int) error {
 	for _, c := range controllers {
 		file := filepath.Join(cgroupPath, c, cg.Path, procsFilename)
-		if err := ioutil.WriteFile(file, []byte(strconv.Itoa(pid)), 0644); err != nil {
+		if err := ioutil.WriteFile(file, []byte(strconv.Itoa(pid)), 0600); err != nil {
 			return err
 		}
 	}
@@ -196,22 +204,38 @@ func (cg *CGroups) addProcess(pid int) error {
 func (cg *CGroups) loadMemSwLimit() error {
 	memoryLimitFile := filepath.Join(cgroupPath, "memory", cg.Path, memoryLimitFilename)
 	memswLimitFile := filepath.Join(cgroupPath, "memory", cg.Path, memswLimitFilename)
-	if err := ioutil.WriteFile(memoryLimitFile, cg.mem, 0644); err != nil {
+	if err := ioutil.WriteFile(memoryLimitFile, cg.mem, 0600); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(memswLimitFile, cg.memsw, 0644)
+	return ioutil.WriteFile(memswLimitFile, cg.memsw, 0600)
 }
 
 func (cg *CGroups) loadCPULimit() error {
 	cfsPeriodFile := filepath.Join(cgroupPath, "cpu", cg.Path, cpuPeriodFilename)
 	cfsQuotaFile := filepath.Join(cgroupPath, "cpu", cg.Path, cpuQuotaFilename)
-	if err := ioutil.WriteFile(cfsPeriodFile, cg.cfsPeriod, 0644); err != nil {
+	if err := ioutil.WriteFile(cfsPeriodFile, cg.cfsPeriod, 0600); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(cfsQuotaFile, cg.cfsQuota, 0644)
+	return ioutil.WriteFile(cfsQuotaFile, cg.cfsQuota, 0600)
 }
 
 func (cg *CGroups) loadProcessLimit() error {
 	maxProcessFile := filepath.Join(cgroupPath, "pids", cg.Path, maxProcessFilename)
-	return ioutil.WriteFile(maxProcessFile, cg.pids, 0644)
+	return ioutil.WriteFile(maxProcessFile, cg.pids, 0600)
+}
+
+func validateCGPath(path string) error {
+	clean := filepath.Clean(path)
+	switch {
+	case path == "":
+		return errors.New("empty cgroup path")
+	case filepath.IsAbs(clean):
+		return errors.New("cgroup path must be relative")
+	case clean == "..":
+		return errors.New("invalid cgroup path")
+	case strings.HasPrefix(clean, ".."+string(filepath.Separator)):
+		return errors.New("invalid cgroup path")
+	default:
+		return nil
+	}
 }

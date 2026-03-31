@@ -32,7 +32,9 @@ func TestNewContainer(t *testing.T) {
 // TestSetHostname ensures hostname is set correctly
 func TestSetHostname(t *testing.T) {
 	ctr := NewContainer()
-	ctr.SetHostname()
+	if err := ctr.SetHostname(); err != nil {
+		t.Fatalf("SetHostname returned error: %v", err)
+	}
 
 	if ctr.Config.Hostname == "" {
 		t.Error("Hostname should not be empty after SetHostname")
