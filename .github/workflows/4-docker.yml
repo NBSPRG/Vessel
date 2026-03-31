@@ -6,9 +6,29 @@ on:
       - main
       - master
       - develop
+    paths:
+      - "cmd/**"
+      - "internal/**"
+      - "pkg/**"
+      - "main.go"
+      - "go.mod"
+      - "go.sum"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "Makefile"
     tags:
       - "v*"
   pull_request:
+    paths:
+      - "cmd/**"
+      - "internal/**"
+      - "pkg/**"
+      - "main.go"
+      - "go.mod"
+      - "go.sum"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "Makefile"
   workflow_dispatch:
 
 concurrency:

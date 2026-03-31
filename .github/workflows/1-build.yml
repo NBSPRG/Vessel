@@ -6,7 +6,25 @@ on:
       - main
       - master
       - develop
+    paths:
+      - "cmd/**"
+      - "internal/**"
+      - "pkg/**"
+      - "main.go"
+      - "go.mod"
+      - "go.sum"
+      - "Makefile"
+      - "Dockerfile"
   pull_request:
+    paths:
+      - "cmd/**"
+      - "internal/**"
+      - "pkg/**"
+      - "main.go"
+      - "go.mod"
+      - "go.sum"
+      - "Makefile"
+      - "Dockerfile"
   workflow_dispatch:
 
 concurrency:
