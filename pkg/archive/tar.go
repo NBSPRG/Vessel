@@ -104,10 +104,11 @@ func (t *Tarball) Extract(dst string) error {
 			if err != nil {
 				return err
 			}
-			if filepath.IsAbs(header.Linkname) {
-				return errors.New("absolute symlink target is not allowed")
+			linkTarget := filepath.Clean(header.Linkname)
+			if filepath.IsAbs(linkTarget) && filepath.VolumeName(linkTarget) != "" {
+				return errors.New("symlink target contains volume name")
 			}
-			if err := os.Symlink(header.Linkname, linkPath); err != nil {
+			if err := os.Symlink(linkTarget, linkPath); err != nil {
 				if !os.IsExist(err) {
 					return err
 				}
