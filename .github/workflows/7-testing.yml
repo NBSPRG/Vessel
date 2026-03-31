@@ -9,6 +9,9 @@ jobs:
   test-unit:
     name: Unit Tests (no root needed)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
